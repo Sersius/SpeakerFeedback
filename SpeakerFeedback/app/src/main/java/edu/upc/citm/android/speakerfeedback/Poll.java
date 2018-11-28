@@ -9,6 +9,7 @@ public class Poll {
     private boolean open;
     private Date start, end;
     private List<Integer> results;
+    private String hash_question;
 
     Poll(){}
 
@@ -71,5 +72,13 @@ public class Poll {
 
     public void setResults(List<Integer> results) {
         this.results = results;
+    }
+
+    public String getHash_question() {
+        return hash_question;
+    }
+
+    public void setHash_question(String hash_question) {
+        this.hash_question = hash_question;
     }
 }

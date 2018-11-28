@@ -1,8 +1,10 @@
 package edu.upc.citm.android.speakerfeedback;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -12,6 +14,7 @@ import android.os.PersistableBundle;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.Button;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -27,7 +30,9 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.Query;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -39,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private List<Poll> polls = new ArrayList<>();
     private Adapter adapter;
     private RecyclerView polls_views;
+    private Button vote;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,7 +57,8 @@ public class MainActivity extends AppCompatActivity {
         polls_views.setLayoutManager(new LinearLayoutManager(this));
         polls_views.setAdapter(adapter);
 
-        textview = findViewById(R.id.textview);
+        textview = findViewById(R.id.num_users_view);
+        vote = findViewById(R.id.vote);
         getOrRegisterUser();
     }
 
@@ -93,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
             polls.clear();
             for(DocumentSnapshot doc : documentSnapshots) {
                 Poll poll = doc.toObject(Poll.class);
+                poll.setHash_question(doc.getId());
                 polls.add(poll);
             }
             Log.i("SpeakerFeedback", String.format("He carregat %d polls", polls.size()));
@@ -113,14 +121,6 @@ public class MainActivity extends AppCompatActivity {
                 .orderBy("start", Query.Direction.DESCENDING)
                 .addSnapshotListener(this, pollsListener);
         super.onStart();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-         roomRegistration.remove();
-         usersRegistration.remove();
-         super.onStop();
     }
 
     @Override
@@ -232,10 +232,14 @@ public class MainActivity extends AppCompatActivity {
                 holder.label_view.setVisibility(View.VISIBLE);
                 if(poll.isOpen()) {
                     holder.label_view.setText("Active");
+                    vote.setTextColor(0xFF00AA00);
+                    vote.setClickable(true);
                 }
                 else
                 {
                     holder.label_view.setText("Previous");
+                    vote.setTextColor(0xFFAA0000);
+                    vote.setClickable(false);
                 }
             }
             else
@@ -263,5 +267,24 @@ public class MainActivity extends AppCompatActivity {
         public int getItemCount() {
             return polls.size();
         }
+    }
+
+    public void OnClickButton(View view)
+    {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        String[] options = new String[polls.get(0).getOptions().size()];
+        int i = 0;
+        for(String string: polls.get(0).getOptions()) {
+            options[i] = string;
+            ++i;
+        }
+        builder.setTitle(polls.get(0).getQuestion()).setItems(options, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 }
