@@ -31,6 +31,7 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +61,10 @@ public class MainActivity extends AppCompatActivity {
         textview = findViewById(R.id.num_users_view);
         vote = findViewById(R.id.vote);
         getOrRegisterUser();
+    }
+
+    public void startFirestoreListenerService(){
+
     }
 
     private EventListener<DocumentSnapshot> roomListener = new EventListener<DocumentSnapshot>() {
@@ -125,9 +130,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        db.collection("users").document(userId).update("room", FieldValue.delete());
+        exitRoom();
         super.onDestroy();
     }
+
+
 
     private void getOrRegisterUser() {
         // Busquem a les preferències de l'app l'ID de l'usuari per saber si ja s'havia registrat
@@ -141,8 +148,16 @@ public class MainActivity extends AppCompatActivity {
         } else {
             // Ja està registrat, mostrem el id al Log
             Log.i("SpeakerFeedback", "userId = " + userId);
-            db.collection("users").document(userId).update("room", "testroom");
+            enterRoom();
         }
+    }
+
+    private void enterRoom() {
+        db.collection("users").document(userId).update("room", "testroom", "last_active", new Date());
+    }
+
+    private void exitRoom() {
+        db.collection("users").document(userId).update("room", FieldValue.delete());
     }
 
     @Override
@@ -176,6 +191,7 @@ public class MainActivity extends AppCompatActivity {
                         .putString("userId", userId)
                         .commit();
                 Log.i("SpeakerFeedback", "New user: userId = " + userId);
+                enterRoom();
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
@@ -183,7 +199,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("SpeakerFeedback", "Error creant objecte", e);
                 Toast.makeText(MainActivity.this,
                         "No s'ha pogut registrar l'usuari, intenta-ho més tard", Toast.LENGTH_SHORT).show();
-                db.collection("users").document(userId).update("room", "testroom");
                 finish();
             }
         });
@@ -282,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 Map<String, Object> map = new HashMap<>();
-                map.put("pollId", polls.get(0).getHash_question());
+                map.put("pollid", polls.get(0).getHash_question());
                 map.put("option", which);
                 db.collection("rooms").document("testroom").collection("votes").document(userId).set(map);
             }
