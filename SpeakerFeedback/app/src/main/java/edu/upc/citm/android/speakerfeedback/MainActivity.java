@@ -61,10 +61,19 @@ public class MainActivity extends AppCompatActivity {
         textview = findViewById(R.id.num_users_view);
         vote = findViewById(R.id.vote);
         getOrRegisterUser();
+        startFirestoreListenerService();
     }
 
     public void startFirestoreListenerService(){
+        Intent intent = new Intent(this,FirestoreListenerService.class);
+        intent.putExtra("room","testroom");
+        startService(intent);
+    }
 
+    private void stopFirestoreListenerService()
+    {
+        Intent intent = new Intent(this, FirestoreListenerService.class);
+        stopService(intent);
     }
 
     private EventListener<DocumentSnapshot> roomListener = new EventListener<DocumentSnapshot>() {
