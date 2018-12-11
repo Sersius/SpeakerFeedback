@@ -77,6 +77,18 @@ public class FirestoreListenerService extends Service {
                 if(poll.isOpen())
                 {
                     Log.d("SpeakerFeedback", poll.getQuestion());
+
+                    Intent intent = new Intent(FirestoreListenerService.this, MainActivity.class);
+                    PendingIntent pending_intent = PendingIntent.getActivity(FirestoreListenerService.this, 0, intent, 0);
+                    Notification notification = new NotificationCompat.Builder(FirestoreListenerService.this, App.CHANNEL_ID)
+                            .setContentTitle("New poll: " +String.format(poll.getQuestion()))
+                            .setSmallIcon(R.drawable.ic_message)
+                            .setContentIntent(pending_intent)
+                            .setVibrate(new long[] { 250, 250, 250, 250, 250 })
+                            .setAutoCancel(true)
+                            .build();
+
+                    startForeground(1, notification);
                 }
             }
         }
