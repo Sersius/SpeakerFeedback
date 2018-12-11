@@ -12,6 +12,8 @@ import android.support.v4.app.NotificationCompat;
 
 public class FirestoreListenerService extends Service {
 
+    private boolean connected = false;
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -26,7 +28,9 @@ public class FirestoreListenerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i("SpeakerFeedback","FirestoreListenerService.onStartCommand");
-        createForegroundNotification();
+        if(!connected) {
+            createForegroundNotification();
+        }
         return START_NOT_STICKY;
     }
 
@@ -40,6 +44,7 @@ public class FirestoreListenerService extends Service {
                 .setContentIntent(pendingIntent)
                 .build();
         startForeground(1,notification);
+        connected = true;
     }
 
     @Override
