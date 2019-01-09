@@ -1,5 +1,6 @@
 package edu.upc.citm.android.speakerfeedback;
 
+import android.app.Application;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -50,12 +51,14 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView polls_views;
     private Button vote;
     private String room_ID;
+    private App app;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        app = (App)getApplication();
         adapter = new Adapter();
 
         polls_views = findViewById(R.id.polsView);
@@ -178,6 +181,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        app.Save();
+    }
+
     private void enterRoom() {
         db.collection("users").document(userId).update("room", room_ID, "last_active", new Date());
     }
@@ -260,7 +269,7 @@ public class MainActivity extends AppCompatActivity {
             super(itemView);
             card_view = itemView.findViewById(R.id.card_view);
             label_view = itemView.findViewById(R.id.label_view);
-            question_view = itemView.findViewById(R.id.question_view);
+            question_view = itemView.findViewById(R.id.room_name_view);
             options_view = itemView.findViewById(R.id.options_view);
         }
     }
