@@ -41,6 +41,7 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REGISTER_USER = 0;
+    private static final int INSERT_ROOM_ID = 1;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private TextView textview;
     private String userId;
@@ -48,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private Adapter adapter;
     private RecyclerView polls_views;
     private Button vote;
+    private String room_ID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,12 +65,11 @@ public class MainActivity extends AppCompatActivity {
         textview = findViewById(R.id.num_users_view);
         vote = findViewById(R.id.vote);
         getOrRegisterUser();
-        startFirestoreListenerService();
     }
 
     public void startFirestoreListenerService(){
         Intent intent = new Intent(this,FirestoreListenerService.class);
-        intent.putExtra("room","testroom");
+        intent.putExtra("room",room_ID);
         startService(intent);
     }
 
@@ -82,12 +83,15 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onEvent(DocumentSnapshot documentSnapshot, FirebaseFirestoreException e) {
             if (e != null){
-                Log.e("SpeakerFeedback","Error al rebre rooms/testroom", e);
+                Log.e("SpeakerFeedback","Error al rebre rooms", e);
                 return;
             }
 
-            if(documentSnapshot.getBoolean("open") == false) {
+            if(!documentSnapshot.contains("open") || !documentSnapshot.getBoolean("open")) {
                 stopFirestoreListenerService();
+                db.collection("users").document(userId).update(
+                        "room", FieldValue.delete());
+                selectRoom();
                 finish();
             }
 
@@ -135,15 +139,19 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onStart() {
-        db.collection("rooms").document("testroom")
-                .addSnapshotListener(this,roomListener);
+        if(room_ID == null)
+            selectRoom();
+        else {
+            db.collection("rooms").document(room_ID)
+                    .addSnapshotListener(this, roomListener);
 
-        db.collection("users").whereEqualTo("room", "testroom")
-                .addSnapshotListener(this,usersListener);
+            db.collection("users").whereEqualTo("room", room_ID)
+                    .addSnapshotListener(this, usersListener);
 
-        db.collection("rooms").document("testroom").collection("polls")
-                .orderBy("start", Query.Direction.DESCENDING)
-                .addSnapshotListener(this, pollsListener);
+            db.collection("rooms").document(room_ID).collection("polls")
+                    .orderBy("start", Query.Direction.DESCENDING)
+                    .addSnapshotListener(this, pollsListener);
+        }
         super.onStart();
     }
 
@@ -167,12 +175,16 @@ public class MainActivity extends AppCompatActivity {
         } else {
             // Ja està registrat, mostrem el id al Log
             Log.i("SpeakerFeedback", "userId = " + userId);
-            enterRoom();
         }
     }
 
     private void enterRoom() {
-        db.collection("users").document(userId).update("room", "testroom", "last_active", new Date());
+        db.collection("users").document(userId).update("room", room_ID, "last_active", new Date());
+    }
+
+    private void selectRoom() {
+        Intent intent = new Intent(this, EnterRoomID.class);
+        startActivityForResult(intent, INSERT_ROOM_ID);
     }
 
     private void exitRoom() {
@@ -190,6 +202,11 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(this, "Has de registrar un nom", Toast.LENGTH_SHORT).show();
                     finish();
                 }
+                break;
+            case INSERT_ROOM_ID:
+                room_ID = data.getStringExtra("room_ID");
+                startFirestoreListenerService();
+                enterRoom();
                 break;
             default:
                 super.onActivityResult(requestCode, resultCode, data);
@@ -318,7 +335,7 @@ public class MainActivity extends AppCompatActivity {
                 Map<String, Object> map = new HashMap<>();
                 map.put("pollid", polls.get(0).getHash_question());
                 map.put("option", which);
-                db.collection("rooms").document("testroom").collection("votes").document(userId).set(map);
+                db.collection("rooms").document(room_ID).collection("votes").document(userId).set(map);
             }
         });
         AlertDialog dialog = builder.create();
@@ -339,7 +356,8 @@ public class MainActivity extends AppCompatActivity {
         {
             case R.id.logout_item:
                 stopFirestoreListenerService();
-                finish();
+                db.collection("users").document(userId).update("room", FieldValue.delete());
+                selectRoom();
                 break;
         }
         return true;

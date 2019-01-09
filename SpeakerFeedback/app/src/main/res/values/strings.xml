@@ -2,4 +2,6 @@
     <string name="app_name">SpeakerFeedback</string>
     <string name="Vote">Vote</string>
     <string name="Logout">Logout</string>
+    <string name="EnterRoomButton">Enter room</string>
+    <string name="WriteName">Write name of room</string>
 </resources>
